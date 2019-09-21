@@ -32,8 +32,9 @@ void CopyFile(const char old_path[], const char new_path[]) {
     fclose(newfp);
     Chmod(new_path, S_IRWXU | S_IRWXG);
 }
-// make needed dirs, this will move cwd to simp_contianer_root
-void prepare_dirs() {
+// make needed files and dirs, this will move cwd to simp_contianer_root
+// and install busybox inside /bin
+void prepare_files() {
     LOGGER_DEBUG_SIMP("PREPARE DIRS");
 
     MD("../simp_container_root/");
@@ -42,13 +43,22 @@ void prepare_dirs() {
     MD("./new_root/bin");
     MD("./new_root/proc");
     MD("./new_root/old_root");
+    MD("./new_root/etc");
+    MD("./new_root/root");
+    MD("./new_root/home");
+    MD("./new_root/home/eric");
+
+    int ret = Fork();
+    if (ret == 0)
+        Execl("/home/eric/coding/busybox", "busybox", "--install", "./new_root/bin/", NULL);
+    Waitpid(ret, NULL, 0);
 }
 
 // make root dir and move program to root/bin
 void create_container() {
     LOGGER_DEBUG_SIMP("CREATE CONTAINER");
 
-    prepare_dirs();
+    prepare_files();
     CopyFile("/home/eric/coding/busybox", "./new_root/bin/busybox");
 
     int pipe_fd[2];
@@ -76,7 +86,7 @@ void create_container() {
     LOGGER_DEBUG_FORMAT("CLONE OVER, PARENT -- CHILD_PID: %ld", long(child_pid));
     Waitpid(child_pid, NULL, 0);
 
-    LOGGER_DEBUG_SIMP("I APPEAR RIGHT BEFORE EXITING");
+    LOGGER_DEBUG_SIMP("I APPEAR RIGHT AFTER CHILD DIE, BEFORE PARENT EXITING");
     kill(0, SIGKILL);
     exit(0);
 }

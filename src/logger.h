@@ -54,4 +54,6 @@ FILE *FP_LOG_OUTPUT = stderr;
             LOG_LEVEL = x;                            \
     } while (0)
 
+const void logger_debug_formt() {}
+
 #endif // LOGGER

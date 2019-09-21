@@ -37,6 +37,13 @@ void Sethostname(const char *name, size_t len) {
         errExit("SETHOSTNAME ERROR, NAME: %s", name);
 }
 
+void Setuid(uid_t uid) {
+    LOGGER_VERB_SIMP("SETUID");
+
+    if (setuid(uid) < 0)
+        errExit("SETUID ERROR, UID: %ld", (long)uid);
+}
+
 void Chdir(const char *path) {
     LOGGER_VERB_SIMP("Chdir");
     if (chdir(path) < 0)

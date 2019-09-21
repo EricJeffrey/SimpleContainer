@@ -12,23 +12,34 @@
 #include "wait.h"
 #include "wrappers.h"
 
-// install busybox
-void ins_busybox() {
-    LOGGER_DEBUG_SIMP("CHILD: INSTALL BUSYBOX");
-
-    int ret = Fork();
-    if (ret == 0)
-        Execl("/bin/busybox", "busybox", "--install", "/bin/", NULL);
-    Waitpid(ret, NULL, 0);
-}
-
 // execute busybox inside container
 void start_shell() {
     LOGGER_DEBUG_SIMP("CHILD: START SHELL");
-    setuid(0);
     LOGGER_DEBUG_FORMAT("CHILD: GETUID: %d", getuid());
 
     Execl("/bin/sh", "sh", NULL);
+}
+
+// create /etc/passwd file and write root info to it
+void create_pw_file() {
+    LOGGER_DEBUG_SIMP("CREATE PASSWD FILE");
+
+    const char pw_path[] = "/etc/passwd";
+    const char pw_content[] = "root:x:0:0:root:/root:/bin/sh\neric:x:1000:1000:eric:/home/eric:/bin/sh\n";
+    int fd = Open(pw_path, O_CREAT | O_RDWR);
+    Write(fd, pw_content, strlen(pw_content));
+    Close(fd);
+}
+
+// create /etc/passwd file and write root info to it
+void create_grp_file() {
+    LOGGER_DEBUG_SIMP("CREATE GROUP FILE");
+
+    const char grp_path[] = "/etc/group";
+    const char grp_content[] = "root:x:0:\neric:x:1000\n";
+    int fd = Open(grp_path, O_CREAT | O_RDWR);
+    Write(fd, grp_content, strlen(grp_content));
+    Close(fd);
 }
 
 // new namespace init
@@ -50,12 +61,15 @@ int new_ns_init(void *arg) {
     Chdir("./new_root");
 
     Syscall(SYS_pivot_root, "./", "./old_root");
-
     Mount("none", "/proc", "proc", 0, NULL);
+
+    create_pw_file();
+    create_grp_file();
+    Setuid((uid_t)0);
+
     // Umount("/old_root");
 
-    ins_busybox();
-    config_net_child();
+    // config_net_child();
     start_shell();
 }
 
