@@ -1,0 +1,8 @@
+.obj
+.o
+.out
+.log
+build/
+.vscode/
+simp_container_root/
+test_main.cpp
