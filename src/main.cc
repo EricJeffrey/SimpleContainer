@@ -7,29 +7,14 @@ char child_stack[STACK_SIZE];
 
 // 将 old_path 指向的文件复制到 new_path，出错时返回 -1
 void CopyFile(const char old_path[], const char new_path[]) {
-    LOGGER_DEBUG_SIMP("COPY FILE");
-    FILE *oldfp, *newfp;
-    if ((oldfp = fopen(old_path, "rb")) == NULL)
-        errExit("FOPEN ERROR, PATH: %s", old_path);
-    if ((newfp = fopen(new_path, "wb")) == NULL)
-        errExit("FOPEN ERROR, PATH: %s", new_path);
+    int oldfd = Open(old_path, O_RDONLY);
+    int newfd = Open(new_path, O_RDWR | O_CREAT);
+    struct stat stbuf;
+    Fstat(oldfd, &stbuf);
+    Copy_file_range(oldfd, NULL, newfd, NULL, stbuf.st_size);
+    Close(oldfd);
+    Close(newfd);
 
-    int n;
-    const int buf_size = 4096;
-    char buf[buf_size] = {};
-    while (!feof(oldfp)) {
-        if ((n = fread(buf, 1, buf_size, oldfp)) < 0) {
-            if (ferror(oldfp))
-                errExit("FREAD ERROR, PATH: %s", old_path);
-            break;
-        }
-        if (fwrite(buf, 1, n, newfp) != n)
-            errExit("FWRITE ERROR, PATH: %s", new_path);
-    }
-
-    fclose(oldfp);
-    fflush(newfp);
-    fclose(newfp);
     Chmod(new_path, S_IRWXU | S_IRWXG);
 }
 // make needed files and dirs, this will move cwd to simp_contianer_root
@@ -46,12 +31,7 @@ void prepare_files() {
     MD("./new_root/etc");
     MD("./new_root/root");
     MD("./new_root/home");
-    MD("./new_root/home/eric");
-
-    int ret = Fork();
-    if (ret == 0)
-        Execl("/home/eric/coding/busybox", "busybox", "--install", "./new_root/bin/", NULL);
-    Waitpid(ret, NULL, 0);
+    CopyFile("/home/eric/coding/busybox", "./new_root/busybox");
 }
 
 // make root dir and move program to root/bin
@@ -59,7 +39,6 @@ void create_container() {
     LOGGER_DEBUG_SIMP("CREATE CONTAINER");
 
     prepare_files();
-    CopyFile("/home/eric/coding/busybox", "./new_root/bin/busybox");
 
     int pipe_fd[2];
     Pipe(pipe_fd);
@@ -82,8 +61,7 @@ void create_container() {
     config_net_p(child_pid);
     Close(pipe_fd[1]);
 
-    LOGGER_DEBUG_FORMAT("CLONE OVER, PARENT -- MY_PID: %ld", long(getpid()));
-    LOGGER_DEBUG_FORMAT("CLONE OVER, PARENT -- CHILD_PID: %ld", long(child_pid));
+    LOGGER_DEBUG_FORMAT("CLONE OVER, PARENT -- MY_PID: %ld, CHILD_PID: %ld\n", long(getpid()), long(child_pid));
     Waitpid(child_pid, NULL, 0);
 
     LOGGER_DEBUG_SIMP("I APPEAR RIGHT AFTER CHILD DIE, BEFORE PARENT EXITING");
@@ -92,7 +70,7 @@ void create_container() {
 }
 
 int main(int argc, char const *argv[]) {
-    LOGGER_SET_LV(LOG_LV_VERBOSE);
+    LOGGER_SET_LV(LOG_LV_DEBUG);
     create_container();
     return 0;
 }

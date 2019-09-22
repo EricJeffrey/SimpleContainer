@@ -24,7 +24,9 @@ void map_ugid(pid_t child_pid) {
     LOGGER_DEBUG_SIMP("MAP UID GID");
 
     const int buf_size = 30;
-    char buf[] = "0 1000 1";
+    char buf[buf_size] = {};
+    snprintf(buf, buf_size, "0 %ld 1", (long)getuid());
+
     char id_path[buf_size] = {};
 
     snprintf(id_path, buf_size, "/proc/%ld/uid_map", (long)child_pid);
@@ -36,6 +38,8 @@ void map_ugid(pid_t child_pid) {
     update_map(setgrp_path, "deny");
 
     memset(id_path, 0, strlen(id_path));
+    memset(buf, 0, sizeof(buf));
+    snprintf(buf, buf_size, "0 %ld 1", (long)getgid());
     snprintf(id_path, buf_size, "/proc/%ld/gid_map", (long)child_pid);
     update_map(id_path, buf);
 }
@@ -74,7 +78,7 @@ void config_net_child() {
     LOGGER_DEBUG_SIMP("CHILD: CONFIG NETWORK");
 
     const char scripts[] = "\
-    ifconfig %s 192.168.9.100/24 up\
+    ifconfig %s 192.168.9.100 up\
     \nip route add default via 192.168.9.1 dev %s";
     const char veth2_name[] = "vethzxcv";
 
