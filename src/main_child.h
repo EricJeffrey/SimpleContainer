@@ -12,6 +12,15 @@
 #include "wait.h"
 #include "wrappers.h"
 
+// install busybox to /bin
+void install_busybox() {
+    LOGGER_DEBUG_SIMP("INSTALL BUSYBOX");
+    int ret = Fork();
+    if (ret == 0)
+        Execl("/busybox", "busybox", "--install", "/bin", NULL);
+    Waitpid(ret, NULL, 0);
+}
+
 // execute busybox inside container
 void start_shell() {
     LOGGER_DEBUG_SIMP("CHILD: START SHELL");
@@ -20,26 +29,22 @@ void start_shell() {
     Execl("/bin/sh", "sh", NULL);
 }
 
-// create /etc/passwd file and write root info to it
-void create_pw_file() {
-    LOGGER_DEBUG_SIMP("CREATE PASSWD FILE");
-
-    const char pw_path[] = "/etc/passwd";
-    const char pw_content[] = "root:x:0:0:root:/root:/bin/sh\neric:x:1000:1000:eric:/home/eric:/bin/sh\n";
-    int fd = Open(pw_path, O_CREAT | O_RDWR);
-    Write(fd, pw_content, strlen(pw_content));
+// create path and write content to it
+void create_file(const char *path, int oflag, const char *content) {
+    LOGGER_DEBUG_FORMAT("CREATE FILE, PATH: %s", path);
+    int fd = Open(path, oflag);
+    Write(fd, content, strlen(content));
     Close(fd);
+    Chmod(path, S_IRWXU | S_IRWXG);
 }
 
-// create /etc/passwd file and write root info to it
-void create_grp_file() {
-    LOGGER_DEBUG_SIMP("CREATE GROUP FILE");
+// prepare files in /etc/
+void prep_etc_files() {
+    LOGGER_DEBUG_SIMP("PREPARE FILES IN /etc");
 
-    const char grp_path[] = "/etc/group";
-    const char grp_content[] = "root:x:0:\neric:x:1000\n";
-    int fd = Open(grp_path, O_CREAT | O_RDWR);
-    Write(fd, grp_content, strlen(grp_content));
-    Close(fd);
+    create_file("/etc/group", O_CREAT | O_RDWR, "root:x:0:root\n");
+    create_file("/etc/passwd", O_CREAT | O_RDWR, "root:x:0:0:root:/root:/bin/sh\n");
+    create_file("/etc/resolv.conf", O_CREAT | O_RDWR, "nameserver 202.38.64.56\n");
 }
 
 // new namespace init
@@ -61,15 +66,13 @@ int new_ns_init(void *arg) {
     Chdir("./new_root");
 
     Syscall(SYS_pivot_root, "./", "./old_root");
-    Mount("none", "/proc", "proc", 0, NULL);
+    Mount("proc", "/proc", "proc", 0, NULL);
+    Umount2("/old_root", MNT_DETACH);
 
-    create_pw_file();
-    create_grp_file();
-    Setuid((uid_t)0);
+    prep_etc_files();
 
-    // Umount("/old_root");
-
-    // config_net_child();
+    install_busybox();
+    config_net_child();
     start_shell();
 }
 

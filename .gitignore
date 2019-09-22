@@ -2,7 +2,10 @@
 .o
 .out
 .log
+
 build/
 .vscode/
 simp_container_root/
+tmp/
+
 test_main.cpp

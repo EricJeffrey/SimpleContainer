@@ -94,6 +94,20 @@ int Write(int fd, const void *buf, size_t n) {
     return ret;
 }
 
+void Fstat(int fd, struct stat *buf) {
+    LOGGER_VERB_SIMP("FSTAT");
+
+    if (fstat(fd, buf) < 0)
+        errExit("FSTAT ERROR, FD: %d", fd);
+}
+
+void Copy_file_range(int infd, off64_t *pinoff, int outfd, off64_t *poutoff, size_t len) {
+    LOGGER_VERB_SIMP("COPY FILE RANGE");
+
+    if (copy_file_range(infd, pinoff, outfd, poutoff, len, 0) < 0)
+        errExit("COPY FILE RANGE, INFD: %d, OUTFD: %d", infd, outfd);
+}
+
 void Mount(const char *spec_file, const char *dir, const char *fstype, unsigned long rwflag, const void *data) {
     LOGGER_VERB_FORMAT("Mount, SPEC_FILE: %s, DIR: %s, fstype: %s", spec_file, dir, fstype);
 
@@ -106,6 +120,13 @@ void Umount(const char *spec_file) {
 
     if (umount(spec_file) < 0)
         errExit("UMOUNT ERROR, SPEC_FILE: %s", spec_file);
+}
+
+void Umount2(const char *spec_file, int flags) {
+    LOGGER_VERB_FORMAT("UMOUNT2, SEPC_FILE: %s", spec_file);
+
+    if (umount2(spec_file, flags) < 0)
+        errExit("UMOUNT2 ERROR, SEPC_FILE: %s", spec_file);
 }
 
 int Clone(int (*fn)(void *), void *child_stack, int flags, void *arg) {
