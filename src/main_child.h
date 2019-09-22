@@ -7,7 +7,6 @@
 #define MAIN_CHILD
 
 #include "logger.h"
-#include "ns_config.h"
 #include "unistd.h"
 #include "wait.h"
 #include "wrappers.h"
@@ -45,6 +44,34 @@ void prep_etc_files() {
     create_file("/etc/group", O_CREAT | O_RDWR, "root:x:0:root\n");
     create_file("/etc/passwd", O_CREAT | O_RDWR, "root:x:0:0:root:/root:/bin/sh\n");
     create_file("/etc/resolv.conf", O_CREAT | O_RDWR, "nameserver 202.38.64.56\n");
+}
+
+void config_net_child() {
+    LOGGER_DEBUG_SIMP("CHILD: CONFIG NETWORK");
+
+    const char scripts[] = "\
+    ifconfig %s 192.168.9.100 up\
+    \nip route add default via 192.168.9.1 dev %s";
+    const char veth2_name[] = "vethzxcv";
+
+    const int buf_size = 1024;
+    char buf[buf_size] = {};
+
+    getcwd(buf, buf_size);
+    LOGGER_DEBUG_FORMAT("CHILD: GETCWD: %s", buf);
+
+    memset(buf, 0, sizeof(buf));
+    int n = snprintf(buf, buf_size, scripts, veth2_name, veth2_name);
+
+    const char config_child_path[] = "./net_config_child.sh";
+    int fd = Open(config_child_path, O_RDWR | O_CREAT);
+    Write(fd, buf, n);
+    Close(fd);
+
+    int ret = Fork();
+    if (ret == 0)
+        Execl("/bin/sh", "sh", config_child_path, NULL);
+    Waitpid(ret, NULL, 0);
 }
 
 // new namespace init

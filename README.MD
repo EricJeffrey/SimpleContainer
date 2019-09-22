@@ -1,32 +1,34 @@
-# 超简易容器
+# 运行Alpine的简单容器
 
-参考[busybox简单容器](https://segmentfault.com/a/1190000006913509)，使用C语言实现的轻量级容器。
+参考[busybox简单容器](https://segmentfault.com/a/1190000006913509)，使用C语言实现的轻量级容器，使用AlpineRootfs作为文件系统。
 
 ## 容器创建步骤
-1. 创建根目录、bin目录等
-   1. 创建`/`, `/bin`目录
-2. 配置根文件系统目录/root
-   1. `/root`, `/old_root`
-3. 挂载文件系统procfs等
-   1. `/proc`, `mount`, `pivot_root`, `chroot`
-4. 配置用户/组ID映射
-5. 配置网络连接bridge + NAT
-6. 从配置文件创建容器
+- 创建根目录，解压缩根文件系统
+- 创建新的Namespace
+- 映射用户/组id
+- 配置网络 bridge + NAT
+  - 挂载文件系统
+  - 执行脚本配置网络
+  - 启动shell
+- 等待子进程终止
 
 ## TODO - 待办
-1. 重构
-   1. 添加包装函数处理错误 √
-   2. 添加调试、verbose等信息 √
-2. 配置网络连接 √
-3. Alpine根文件系统
-4. 添加`LOG/DEBUG`选项机制 √
-5. 添加包装函数 √
-6. 错误处理分级
+1. Alpine根文件系统
+2. 错误处理分级
       1. 严重错误 - 退出
       2. 不严重错误 - 日志
 
+## 配置文件配置项
+- 日志
+  - 日志等级`LOG_LEVEL`
+  - 日志输出文件，默认`stderr`
+- 根文件系统路径
+- 用户/组id映射值
+- 网络设备名称
+- 网络地址
+
 ## 已解决问题
-1. `clone` 之后ssh连接失效/用户登出问题~~
+1. `clone` 之后ssh连接失效/用户登出问题
    > 需要在终止时`kill`掉子进程，即`SIGCHLD`或`kill(0, SIGKILL)`
 2. UID/GID映射写入失败
    > 需要由父进程向打开子进程的`/proc/PID/uid_map gid_map`文件，同时写入`gid_map`前需要向`/proc/PID/setgroups`写入字符串`"deny"`!
@@ -37,8 +39,3 @@
 5. Umount文件系统出现`resource busy`
    > 使用`umount -l target`或者`umount2(target, MNT_DETACH)`，**detach**而不卸载文件系统
 6. 
-
-## 配置文件配置项
-- 日志
-  - 日志等级`LOG_LEVEL`
-  - 日志输出文件，默认`stderr`
