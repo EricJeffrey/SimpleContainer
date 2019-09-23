@@ -1,20 +1,10 @@
-build : main.cc
-	g++ -o ../build/main.out main.cc
-
-.PHONY : clean
-clean :
-	-rm ../build/main.out
-	-rm -r ../simp_container_root
-
-run :
-	make clean
-	make build
-	../build/main.out
+build : main.cpp
+	g++ -o ../build/main.out main.cpp
 
 .PHONY : cleansu
 cleansu:
 	-sudo rm ../build/main.out
-	-sudo rm -r ../simp_container_root
+	-sudo rm -r /home/eric/coding/simp_containers/alpine_container
 
 runsu: 
 	make cleansu

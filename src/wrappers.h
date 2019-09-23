@@ -66,6 +66,14 @@ pid_t Waitpid(pid_t pid, int *stat_loc, int options) {
     return ret;
 }
 
+pid_t Waitp(pid_t pid) {
+    LOGGER_VERB_SIMP("Waitpid With NULL stat_loc And 0 options");
+    int ret = waitpid(pid, NULL, 0);
+    if (ret < 0)
+        errExit("WAITPID ERROR, PID: %d", pid);
+    return ret;
+}
+
 int Open(const char *path, int oflag) {
     LOGGER_VERB_SIMP("Open");
     int ret = open(path, oflag);
@@ -80,10 +88,12 @@ void Close(int fd) {
         errExit("CLOSE ERROR, FD: %d", fd);
 }
 
-void Read(int fd, void *buf, size_t nbytes) {
+int Read(int fd, void *buf, size_t nbytes) {
     LOGGER_VERB_SIMP("Read");
-    if (read(fd, buf, nbytes) < 0)
+    int ret = 0;
+    if ((ret = read(fd, buf, nbytes)) < 0)
         errExit("READ ERROR, FD: %d", fd);
+    return ret;
 }
 
 int Write(int fd, const void *buf, size_t n) {
@@ -156,5 +166,7 @@ void Pipe(int *pipefds) {
         execl(path, arg, __VA_ARGS__);                        \
         errExit("EXECL ERROR, PATH: %s, ARG: %s", path, arg); \
     } while (0)
+
+#define MD(A) Mkdir(A, S_IRWXU | S_IRWXG)
 
 #endif // WRAPPERS
