@@ -10,18 +10,27 @@
 #include "unistd.h"
 #include "wait.h"
 #include "wrappers.h"
+#include <sys/capability.h>
 
 /* ==================Alpine Root Fs====================*/
 
-void childPipeWait(int *pipe_fd) {
+// read child's pid and wait pipe's close
+pid_t childPipeReadWait(int *pipe_fd) {
     LOGGER_DEBUG_SIMP("CHILD: WAIT FOR PIPE");
 
     Close(pipe_fd[1]);
+
+    const int pid_size = sizeof(pid_t);
+    pid_t my_pid;
+    if (Read(pipe_fd[0], &my_pid, pid_size) != pid_size)
+        errExitSimp("CHILD: PIPE READ ERROR, READ PID");
+
     char ch;
-    if (Read(pipe_fd[0], &ch, 1) > 0)
-        errExit("CHILD: PIPE ERROR");
+    if (Read(pipe_fd[0], &ch, 1) != 0)
+        errExitSimp("CHILD: PIPE READ ERROR, READ EOF");
 
     LOGGER_DEBUG_SIMP("CHILD: PIPE CLOSED");
+    return my_pid;
 }
 
 void childPivotAndMount() {
@@ -71,6 +80,8 @@ void childConfNet() {
 void childStart() {
     LOGGER_DEBUG_SIMP("CHILD: START SHELL");
 
+    LOGGER_DEBUG_FORMAT("CHILD: WHOAMI BEFORE SHELL: %ld", (long)getuid());
+
     Execl("/bin/sh", "sh", NULL);
 }
 
@@ -82,7 +93,7 @@ void childSetEnv() {
 int childInit(void *arg) {
     LOGGER_DEBUG_SIMP("CHILD: INIT");
 
-    childPipeWait((int *)arg);
+    pid_t my_pid = childPipeReadWait((int *)arg);
     childPivotAndMount();
     childConfNet();
     childSetEnv();

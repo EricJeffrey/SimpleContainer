@@ -18,16 +18,6 @@ void CopyFile(const char old_path[], const char new_path[]) {
 
 /* ===================Alpine Rootfs===========================*/
 
-// update uid/gid map file
-void updateMap(const char *map_file_path, char const *content) {
-    LOGGER_DEBUG_SIMP("UPDATE MAP");
-
-    int fd_uid = Open(map_file_path, O_RDWR);
-    int len = strlen(content);
-    int ret = Write(fd_uid, content, len);
-    Close(fd_uid);
-}
-
 // create rootfs and extract files
 void prepareRootFs() {
     LOGGER_DEBUG_SIMP("PREPARE ROOT FS");
@@ -64,17 +54,31 @@ pid_t createNewNs(int pipe_fd[]) {
     return child_pid;
 }
 
+// update uid/gid map file
+void updateMap(const char *map_file_path, char const *content) {
+    LOGGER_DEBUG_SIMP("UPDATE MAP");
+
+    int fd_uid = Open(map_file_path, O_RDWR);
+    int len = strlen(content);
+    int ret = Write(fd_uid, content, len);
+    Close(fd_uid);
+}
+
 // write uid_map and gid_map
 void mapUsrGrpId(pid_t child_pid) {
     LOGGER_DEBUG_SIMP("PARENT: MAP UID GID");
     const char uid_map_fmt[] = "0 %ld 100";
     const char gid_map_fmt[] = "0 %ld 100";
 
+    uid_t uid = 1000;
+    gid_t gid = 1000;
+
     const int buf_size = 1024;
     char uid_map_content[buf_size] = {};
     char gid_map_content[buf_size] = {};
-    snprintf(uid_map_content, buf_size, uid_map_fmt, (long)getuid());
-    snprintf(gid_map_content, buf_size, gid_map_fmt, (long)getgid());
+
+    snprintf(uid_map_content, buf_size, uid_map_fmt, (long)uid);
+    snprintf(gid_map_content, buf_size, gid_map_fmt, (long)gid);
 
     char uid_path[buf_size] = {};
     snprintf(uid_path, buf_size, "/proc/%ld/uid_map", (long)child_pid);
@@ -82,7 +86,7 @@ void mapUsrGrpId(pid_t child_pid) {
 
     char setgrp_path[buf_size] = {};
     snprintf(setgrp_path, buf_size, "/proc/%ld/setgroups", (long)child_pid);
-    updateMap(setgrp_path, "deny");
+    // updateMap(setgrp_path, "deny");
 
     char gid_path[buf_size] = {};
     snprintf(gid_path, buf_size, "/proc/%ld/gid_map", (long)child_pid);
@@ -113,10 +117,18 @@ void confNetParent(pid_t child_pid) {
     Write(fd, buf, n);
     Close(fd);
 
-    int ret = Fork();
-    if (ret == 0)
+    pid_t ret = Fork();
+    if (ret == 0) {
+        LOGGER_DEBUG_SIMP("PARENT: EXEC CONFIG NET");
         Execl("/bin/bash", "bash", config_p_path, NULL);
+    }
     Waitp(ret);
+}
+
+// tell child its pid and close pipe
+void tellChild(int *pipe_fd, pid_t child_pid) {
+    Write(pipe_fd[1], &child_pid, sizeof(pid_t));
+    Close(pipe_fd[1]);
 }
 
 void createContainer() {
@@ -126,11 +138,12 @@ void createContainer() {
     Pipe(pipe_fd);
 
     prepareRootFs();
-    int child_pid = createNewNs(pipe_fd);
+    pid_t child_pid = createNewNs(pipe_fd);
+
     mapUsrGrpId(child_pid);
     confNetParent(child_pid);
 
-    Close(pipe_fd[1]);
+    tellChild(pipe_fd, child_pid);
     Waitp(child_pid);
     kill(0, SIGKILL);
     exit(0);

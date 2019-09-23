@@ -1,5 +1,5 @@
 build : main.cpp
-	g++ -o ../build/main.out main.cpp
+	g++ -o ../build/main.out main.cpp -lcap
 
 .PHONY : cleansu
 cleansu:

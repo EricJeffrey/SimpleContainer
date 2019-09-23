@@ -12,14 +12,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-const void errExit(const char *fmt, ...) {
-    va_list ap;
-    va_start(ap, fmt);
-    fprintf(stderr, fmt, ap);
-    fprintf(stderr, ".\nerrno: %d, strerror: %s\n", errno, strerror(errno));
-    va_end(ap);
-    kill(0, SIGKILL);
-    exit(EXIT_FAILURE);
-}
+#define errExitSimp(A)                                                                \
+    do {                                                                              \
+        fprintf(stderr, "%s.\nerrno: %d, strerror: %s\n", A, errno, strerror(errno)); \
+        kill(0, SIGKILL);                                                             \
+        exit(EXIT_FAILURE);                                                           \
+    } while (0);
+
+#define errExitFormat(A, ...)                                                    \
+    do {                                                                         \
+        fprintf(stderr, A, __VA_ARGS__);                                         \
+        fprintf(stderr, ".\nerrno: %d, strerror: %s\n", errno, strerror(errno)); \
+        kill(0, SIGKILL);                                                        \
+        exit(EXIT_FAILURE);                                                      \
+    } while (0)
 
 #endif // ERRH
