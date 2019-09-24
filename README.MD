@@ -3,11 +3,13 @@
 参考[busybox简单容器](https://segmentfault.com/a/1190000006913509)，使用C语言实现的轻量级容器，使用[AlpineRootfs](https://alpinelinux.org/downloads/)作为文件系统。
 
 ## 如何构建项目
-**注**：由于项目中的文件路径采用绝对路径，因此构建后运行会出现问题，该问题会在下一个版本中解决。
-
 构建步骤，在`src`目录下执行下列命令：
-- `make build`，依赖`g++`与`gnumake`
-- `sudo ../buid/main.out`或执行`make runsu`
+- `make build`，依赖`g++`与`GUNMake`
+
+- 下载[AlpineMiniRootFileSystem](http://dl-cdn.alpinelinux.org/alpine/v3.10/releases/x86_64/alpine-minirootfs-3.10.2-x86_64.tar.gz)，重命名为`alpine_rfs.tar.gz`并复制到`build/`文件夹下
+
+- 切换到`/build`目录并执行`sudo ./main.out`
+
 
 ## 容器创建步骤
 - 创建根目录，解压缩根文件系统

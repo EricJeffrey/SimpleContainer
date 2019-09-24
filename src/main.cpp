@@ -22,19 +22,20 @@ void CopyFile(const char old_path[], const char new_path[]) {
 void prepareRootFs() {
     LOGGER_DEBUG_SIMP("PREPARE ROOT FS");
 
-    const char def_container_path[] = "/home/eric/coding/simp_containers/";
-    const char container_path[] = "/home/eric/coding/simp_containers/alpine_container/";
-    const char rfs_path[] = "/home/eric/coding/simp_containers/alpine_container/rootfs/";
-    const char rfs_file_path[] = "/home/eric/coding/alpine_rfs.tar.gz";
+    const char def_container_path[] = "./simp_containers/";
+    const char container_path[] = "./simp_containers/alpine_container/";
+    const char rfs_path[] = "./simp_containers/alpine_container/rootfs/";
+    const char rfs_file_path[] = "./alpine_rfs.tar.gz";
 
+    MD(def_container_path);
     MD(container_path);
     MD(rfs_path);
-    Chdir(container_path);
 
     int ret = Fork();
     if (ret == 0)
         Execl("/bin/tar", "tar", "-xf", rfs_file_path, "-C", rfs_path, NULL);
     Waitp(ret);
+    Chdir(container_path);
 }
 
 // create new Namespace using clone()
@@ -70,8 +71,8 @@ void mapUsrGrpId(pid_t child_pid) {
     const char uid_map_fmt[] = "0 %ld 100";
     const char gid_map_fmt[] = "0 %ld 100";
 
-    uid_t uid = 1000;
-    gid_t gid = 1000;
+    uid_t uid = 0;
+    gid_t gid = 0;
 
     const int buf_size = 1024;
     char uid_map_content[buf_size] = {};
