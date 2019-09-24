@@ -1,4 +1,5 @@
 build : main.cpp
+	mkdir ../build/
 	g++ -o ../build/main.out main.cpp -lcap
 
 .PHONY : cleansu
