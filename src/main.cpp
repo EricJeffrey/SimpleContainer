@@ -26,6 +26,10 @@ void prepareRootFs() {
     const char container_path[] = "./simp_containers/alpine_container/";
     const char rfs_path[] = "./simp_containers/alpine_container/rootfs/";
     const char rfs_file_path[] = "./alpine_rfs.tar.gz";
+    // const char def_container_path[] = "./simp_containers/";
+    // const char container_path[] = "./simp_containers/ubuntu_container/";
+    // const char rfs_path[] = "./simp_containers/ubuntu_container/rootfs/";
+    // const char rfs_file_path[] = "./ubuntu_rfs.tar.gz";
 
     MD(def_container_path);
     MD(container_path);

@@ -83,6 +83,7 @@ void childStart() {
     LOGGER_DEBUG_FORMAT("CHILD: WHOAMI BEFORE SHELL: %ld", (long)getuid());
 
     Execl("/bin/sh", "sh", NULL);
+    // Execl("/bin/bash", "bash", NULL);
 }
 
 void childSetEnv() {
