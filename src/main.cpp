@@ -75,8 +75,8 @@ void mapUsrGrpId(pid_t child_pid) {
     const char uid_map_fmt[] = "0 %ld 100";
     const char gid_map_fmt[] = "0 %ld 100";
 
-    uid_t uid = 0;
-    gid_t gid = 0;
+    uid_t uid = 1000;
+    gid_t gid = 1000;
 
     const int buf_size = 1024;
     char uid_map_content[buf_size] = {};

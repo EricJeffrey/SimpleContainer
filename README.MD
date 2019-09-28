@@ -60,6 +60,10 @@
 - `errExit`存在潜在错误，推测出现在获取参数位置
   > 尚不知问题原因，但改为了宏定义实现
 
+- 设置 `cap_setuid,cap_setgid` 之后以非root身份运行容器映射 `uid, gid` 仍然无效
+  > 不仅仅需要 `capability`，还需要将可执行文件的 `setuid,setgid` 权限打开  
+  > 打开方式: `chmod u+s prog, chmod g+s prog`，之后使用 `ls -l` 命令查看会看到可执行位变成了 s
+
 ## 所需的配置项
 - 日志
   - 日志等级`LOG_LEVEL`
