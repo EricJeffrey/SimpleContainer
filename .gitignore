@@ -3,6 +3,7 @@
 .out
 .log
 
+build.link
 build/
 .vscode/
 simp_container_root/
